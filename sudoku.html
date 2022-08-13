@@ -9,8 +9,8 @@
         <div class="sudokuTable"></div>
         <div class='inputSudoku'></div>
         <div class="outputTimer"></div>
-        <div class="outputSudoku"></div>
         <script>
+            //マスをクラスで作成
             class Cell{
                 constructor(tagName,tagNum,isEditable){
                     this.isEditable = isEditable;
@@ -50,15 +50,10 @@
                 }
             };
 
-
-
-
-
-            let nums = [];
-            let refs = [];
-            let groups = new Set();
-            let cells = [];
-            let swapNums;
+            let nums = [];//
+            let refs = [];//
+            let groups = new Set();//
+            let cells = [];//
 
             async function loadFile(file) {
                 let text = await file.text();
@@ -133,19 +128,18 @@
                 }
             }
 
-           
-
             //get first deployable point from areaMap
             function getFirstPointIndex(areaMap){
                 const pickUpNum = (element)=>(element.length>0 && element[0]!=-1)
                 //console.log(areaMap)
                 return areaMap.findIndex(pickUpNum);
             }
-
+            //
             function checkEnd(areaMap){
                 const minus = (element)=>element[0]!=-1
                 return !(areaMap.some(minus));
             }
+            //
             function checkCleared(myNums){
                 result = new Set();
                 const model = [1,2,3,4,5,6,7,8,9]
@@ -157,7 +151,6 @@
                     })
                     result.add(mySet.size);
                 })
-                //console.log(result);
                 return (result.size==1)
             }
             //check it does have some contradictions(bool)
@@ -222,13 +215,11 @@
                 str = table(str)
                 element = document.getElementsByClassName('sudokuTable')[0];
                 element.innerHTML = str;
-
+                //make cells
                 for(i=0;i<81;i++){
                     const myCell = new Cell('c' + i,i,true);
                         cells.push(myCell)
                 }
-
-
 
                 //make array and set
                 for (y=0;y<9;y++){
@@ -270,9 +261,6 @@
             }
             init();
 
-
-
-            
             function h1(str){return '<h1>' + str + '</h1>'}
             function table(str){return '<table>' + str + '</table>'}
             function tr(str){return '<tr>' + str + '</tr>'} 
