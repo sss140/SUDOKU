@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+    <head>
+
+    </head>
+    <body>
+        <div class="myTimer1">timer</div>
+        <div class="myTimer2">timer</div> 
+        <script>
+            const element = document.getElementsByClassName('myTimer1')[0];
+            function timeout(n){
+
+
+            }
+            function rec(n){
+                if(n>9000){return}
+                //console.log(n)
+                
+                setTimeout(() => {
+                    element.innerHTML = n
+                }, n);
+                rec(1+n);
+            };
+            rec(0)
+        </script>
+    </body>
+</html>

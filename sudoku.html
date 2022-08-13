@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <style></style>
+    </head>
+    <body>
+        <input type="file" onchange="loadFile(this.files[0])">
+        <div class="sudokuTable"></div>
+        <div class='inputSudoku'></div>
+        <div class="outputTimer"></div>
+        <div class="outputSudoku"></div>
+        <script>
+            class Cell{
+                constructor(tagName,tagNum,isEditable){
+                    this.isEditable = isEditable;
+                    this.tagName = tagName;
+                    this.tagNum = tagNum
+                    this.selectedNum = 0;
+                    this.myCell = document.getElementsByClassName(tagName)[0];
+                    this.ctx = this.myCell.getContext('2d');
+                    this.ctx.font = '60px serif';
+                    this.writeCell();
+                    this.myCell.addEventListener('click',this.onClickCell);
+                }
+                onClickCell = ()=>{
+                    if(this.isEditable){
+                    this.selectedNum++;
+                    this.selectedNum%=10;
+                    nums[this.tagNum] = this.selectedNum;
+                    this.writeCell();
+                    }
+                }
+                loadNum = (num)=>{
+                    this.isEditable = (num==0);
+                    this.selectedNum = num;
+                    this.writeCell()
+                }
+                showAnswer = (num)=>{
+                    this.selectedNum = num;
+                    this.writeCell();
+                    this.isEditable = false;
+                }                
+                writeCell = ()=>{
+                    this.ctx.clearRect(0,0,60,60);
+                    this.ctx.fillStyle = '#000000';
+                    this.ctx.strokeRect(0,0,60,60);
+                    this.ctx.fillStyle = this.isEditable ? 'red':'black';
+                    this.ctx.fillText((this.selectedNum == 0 ? '':this.selectedNum),12,55);
+                }
+            };
+
+
+
+
+
+            let nums = [];
+            let refs = [];
+            let groups = new Set();
+            let cells = [];
+            let swapNums;
+
+            async function loadFile(file) {
+                let text = await file.text();
+                nums = text.split('\n').join(',').split(',');
+                for(i=0;i<81;i++){
+                    nums[i]=parseInt(nums[i]);
+                    cells[i].loadNum(nums[i]);
+                }
+                text = '<input type="button" value = "Solve the SUDOKU" id = "solveBtn" onclick="solve()">'
+                const element = document.getElementsByClassName('inputSudoku');
+                element[0].innerHTML = text;
+            }
+
+            function showOutputTimer(endurance){
+                const element = document.getElementsByClassName('outputTimer');
+                let str = Math.floor(endurance)/1000
+                element[0].innerHTML = h1('--- ' + str + ' sec---')
+                
+            }
+
+            function showOutput(myNums){
+                for(i=0;i<81;i++){
+                    cells[i].showAnswer(myNums[i]);
+                }
+            }
+
+            function solve(){
+                const startTime = performance.now();
+                let isEnd = false;
+            
+                function rec(myNums,index,val){
+                    if(isEnd){return}
+                    let newNums = [...myNums];
+                    newNums[index] = val;
+                    let areaMap = getAreaMap(newNums);
+                    let singlePoints = getSinglePoints(areaMap);
+
+                    while(singlePoints.length>0){
+                    singlePoints.forEach((p)=>{
+                        newNums[p] = areaMap[p][0];
+                    });
+                    areaMap = getAreaMap(newNums);
+                    singlePoints = getSinglePoints(areaMap);
+                } 
+
+                    if(checkValidation(areaMap)){
+                        return;
+                    }
+                    
+                    if(checkEnd(areaMap)){
+                        if(checkCleared(newNums)){
+                        checkCleared(newNums)
+                        //solved!
+                        isEnd = true;
+                        showOutputTimer(performance.now()-startTime)
+                        showOutput(newNums);
+                        return;
+                        }
+                    }
+
+                    let firstPointIndex = getFirstPointIndex(areaMap); 
+                    if (firstPointIndex == -1){return};
+                    areaMap[firstPointIndex].forEach((val)=>{
+                      rec(newNums,firstPointIndex,val)
+                    })
+                };
+                rec(nums,0,nums[0]);
+                if(!(isEnd)){
+                    const element = document.getElementsByClassName('outputTimer');
+                    
+                    element[0].innerHTML = h1('Unable to solve!')
+                }
+            }
+
+           
+
+            //get first deployable point from areaMap
+            function getFirstPointIndex(areaMap){
+                const pickUpNum = (element)=>(element.length>0 && element[0]!=-1)
+                //console.log(areaMap)
+                return areaMap.findIndex(pickUpNum);
+            }
+
+            function checkEnd(areaMap){
+                const minus = (element)=>element[0]!=-1
+                return !(areaMap.some(minus));
+            }
+            function checkCleared(myNums){
+                result = new Set();
+                const model = [1,2,3,4,5,6,7,8,9]
+                groups.forEach((group)=>{
+                    let mySet = new Set();
+                    group.forEach((element)=>{
+                        const n = myNums[element]
+                        mySet.add(n)
+                    })
+                    result.add(mySet.size);
+                })
+                //console.log(result);
+                return (result.size==1)
+            }
+            //check it does have some contradictions(bool)
+            function checkValidation(areaMap){
+                return areaMap.some((p)=>p.length==0)
+            }
+            //check put only one numbercell(array)
+            function getSinglePoints(areaMap){
+                let singlePoints = [];
+                for(i=0;i<81;i++){
+                    if((areaMap[i][0]!=-1) && (areaMap[i].length == 1)){
+                            singlePoints.push(i)
+                    }
+                };
+                return singlePoints
+            }
+            //generate entire area map(array)
+            function getAreaMap(myNums){
+                let areaMap = [];
+                for(i=0;i<81;i++){
+                    areaMap.push(getSingleArea(i,myNums));
+                };
+                return areaMap;
+            }
+            //generate single cell area map(array)
+            function getSingleArea(n,myNums){
+                if(myNums[n]==0){
+                    let result = [];
+                    let ref = refs[n];
+                    ref.forEach((v)=>{
+                        result.push(myNums[v]);
+                    })
+                    return reverseSet(result);
+                }else{
+                    return [-1];
+                }
+            }
+            // generate reverse set(set)
+            function reverseSet(mySet){
+                let res = new Set([1,2,3,4,5,6,7,8,9])
+                mySet.forEach((element)=>{
+                    res.delete(parseInt(element));
+                })
+                return Array.from(res);
+            }
+
+
+
+            function init(){
+                //make table
+                let str = ''
+                for(y=0;y<9;y++){
+                    str += '<tr>'
+                    for(x=0;x<9;x++){
+                        const tagNum = y*9+x;
+                        const tagName = 'c' + tagNum;
+                        const canvas = '<canvas class="' + tagName + '" width = "60" height = "60">aaa</canvas>'
+                        str += td(canvas)
+                    };
+                   str+='</tr>'
+                };
+                str = table(str)
+                element = document.getElementsByClassName('sudokuTable')[0];
+                element.innerHTML = str;
+
+                for(i=0;i<81;i++){
+                    const myCell = new Cell('c' + i,i,true);
+                        cells.push(myCell)
+                }
+
+
+
+                //make array and set
+                for (y=0;y<9;y++){
+                    let mySet = new Set();
+                    for(x=0;x<9;x++){
+                        let tagNum = y*9+x;
+                        mySet.add(tagNum);
+                    };
+                    groups.add(mySet);
+                };
+                for (x=0;x<9;x++){
+                    let mySet = new Set();
+                    for(y=0;y<9;y++){
+                        let tagNum = y*9+x;
+                        mySet.add(tagNum);
+                    };
+                    groups.add(mySet);
+                }; 
+                [0,3,6,27,30,33,54,57,60].forEach((i)=>{
+                    let mySet = new Set();
+                    [0,1,2,9,10,11,18,19,20].forEach((j)=>{
+                        mySet.add(i+j);
+                    })
+                    groups.add(mySet);
+                })
+
+                for(i=0;i<81;i++){
+                    let ref = new Set()
+                    groups.forEach((group)=>{
+                        const arr = Array.from(group)
+                        if(arr.some((v)=> v==i)){
+                            arr.forEach(n=>{
+                                ref.add(n)
+                            })
+                            }
+                        })
+                    refs.push(ref);
+                }
+            }
+            init();
+
+
+
+            
+            function h1(str){return '<h1>' + str + '</h1>'}
+            function table(str){return '<table>' + str + '</table>'}
+            function tr(str){return '<tr>' + str + '</tr>'} 
+            function td(str){return '<td>' + str + '</td>'} 
+        </script>
+    </body>
+</html>
