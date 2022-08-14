@@ -2,7 +2,14 @@
 <html>
     <head>
         <meta charset="UTF-8">
-        <style></style>
+        <style>
+        table{
+    border-spacing: 7px 0px;
+}
+td{
+    padding: 0px 0px;
+}
+        </style>
     </head>
     <body>
         <input type="file" onchange="loadFile(this.files[0])">
@@ -207,7 +214,7 @@
                     for(x=0;x<9;x++){
                         const tagNum = y*9+x;
                         const tagName = 'c' + tagNum;
-                        const canvas = '<canvas class="' + tagName + '" width = "60" height = "60">aaa</canvas>'
+                        const canvas = '<canvas class="' + tagName + '" width = "60" height = "60"></canvas>'
                         str += td(canvas)
                     };
                    str+='</tr>'
